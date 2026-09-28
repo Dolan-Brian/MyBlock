@@ -39,10 +39,10 @@ TOOL_FUNCTIONS = {
     "get_traffic_speeds": get_traffic_speeds,
 }
 
-# A hard safety and cost-control limit - prevents a genuinely unbounded
-# loop if something ever goes wrong. Set to 5, matching our five real
-# tools - a reasonable ceiling assuming a question might need each tool
-# called once, without allowing unlimited, runaway calls.
+# A safety and cost-control limit that prevents an unbounded loop. The loop
+# stops starting new rounds once this many tool calls have been made. It is
+# checked once per round, so a round in which Claude requests several tools
+# at once can push the total slightly past this number.
 MAX_TOOL_CALLS = 5
 
 

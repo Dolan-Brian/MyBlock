@@ -20,7 +20,7 @@ HEADERS = {
 }
 
 
-def get_building_permits(location, time_period_days=90, limit=50):
+def get_building_permits(location, time_period_days=180, limit=50):
     """
     Queries NYC's real, currently-active DOB NOW Approved Permits dataset
     for a given location within a recent time window - answers "what's

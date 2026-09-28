@@ -45,11 +45,7 @@ producing a misleading answer built on an irrelevant lookup. `auto`
 preserves Claude's ability to honestly recognize when a question falls
 outside what MyBlock can actually answer, rather than faking confidence.
 
-The agent runs in a loop (see `agent.py`): call Claude, check whether it
-requested a tool, execute the real function if so, send the real result
-back, and repeat - up to a hard safety limit of 5 total tool calls - until
-Claude has enough information to answer. The sequence of which tools get
-called, and in what order, is decided fresh for every question.
+The agent runs in a loop (see `agent.py`): call Claude, check whether it requested a tool, execute the real function if so, send the real result back, and repeat until Claude has enough information to answer. A safety limit stops the loop from starting a new round once 5 tool calls have been made. The check happens once per round, so a round where Claude requests several tools at once will finish, and the total can slightly exceed 5. The sequence of which tools get called, and in what order, is decided fresh for every question.
 
 ## Real Data, Real Problems
 
