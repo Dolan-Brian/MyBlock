@@ -2,10 +2,10 @@
 
 This documents the evaluation framework built for MyBlock's agent: the
 dimensions being scored, the nine test cases and the answer key written
-for each before any test was run, and four rounds of testing — a
-baseline, two rounds of system-prompt changes each tested at a single
-run, and a final round at three runs per question to check whether the
-single-run results actually held up.
+for each before any test was run, and five rounds of testing — a
+baseline, three rounds of system-prompt changes, and two checks at
+three runs per question to see whether single-run results actually
+held up.
 
 ## Why This Exists
 
@@ -54,7 +54,7 @@ surfaced a failure the existing dimensions didn't have language for.
 
 An eighth dimension, something like *completeness within honest
 limits*, is proposed but not yet formally defined — see "Third Round"
-below.
+below, and "Where This Leaves Things" at the end of this document.
 
 This set of terms was arrived at independently, from watching real
 output, before checking whether the field had standard names for any of
@@ -334,21 +334,70 @@ matching; it does not explicitly require stating the data's timestamp
 and lag on every time-sensitive question, which is the likeliest reason
 one run skipped it while the other two didn't.
 
-## Honest Summary of Where Things Stand
+## Honest Summary, After the Third Round
 
-Six of nine questions are genuinely stable across repeated attempts.
-Two (Tests 1 and 2) are stable on the dimension that matters most,
-honesty, but reveal real variation in scope or completeness the rubric
-doesn't yet score. One (Test 5) shows the original grounding failure
-recurring at roughly one-in-three, meaning the version-2 prompt reduced
-but did not eliminate it.
+Six of nine questions were genuinely stable across repeated attempts.
+Two (Tests 1 and 2) were stable on the dimension that matters most,
+honesty, but revealed real variation in scope or completeness the
+rubric didn't yet score. One (Test 5) showed the original grounding
+failure recurring at roughly one-in-three under version 2 of the
+prompt — addressed directly below.
+
+## System Prompt, Version 3
+
+Rule 6 was added specifically for Test 5's regression found in the
+third round: it requires stating a tool result's actual timestamp on
+any time-specific question, and saying explicitly when that timestamp
+doesn't plausibly cover the time asked about. The old rule 6 (act on
+an available tool rather than asking first) was renumbered to rule 7;
+its text is unchanged.
+
+### Verification, at three runs
+
+Test 5 passed cleanly across all three runs. Every run named the
+data's actual timestamp, stated it was several hours after 3am, and
+said directly that the data couldn't answer the question as asked —
+the exact failure from the baseline and the partial recurrence from
+the third round are both gone here.
+
+One soft edge, not a failure: in two of the three runs, after
+correctly disclosing the mismatch, the answer went on to guess that
+3am would likely be even quieter than the 6-7am readings it had. That
+guess is stated as reasoning, not presented as fact, so it doesn't
+violate rule 1 or rule 6 as written. But it's the same instinct that
+produced the original failure, now kept in check rather than removed.
+Worth watching for if this pattern shows up more assertively elsewhere.
+
+The rest of the suite was re-checked at the same time, to confirm this
+change didn't disturb anything already stable. Tests 1, 3, 4, 6, 8, and
+9 were identical to the prior three-run round. Test 2's known
+inconsistency (documented above) reappeared unchanged — one of three
+runs called `get_historical_trend` and fully answered the question,
+two did not — which is expected, since rule 6 was not written to
+address it. Test 7 showed a small variation in the `complaint_type`
+argument passed between runs, not investigated further; the answers
+themselves were not reviewed for a change in outcome.
+
+## Where This Leaves Things
+
+Of the two items flagged at the end of the third round, one is closed
+and one remains open:
+
+- **Test 5's regression: resolved and verified at three runs.**
+- **Test 2's completeness gap: still open.** No dimension in this
+  document yet scores whether an answer follows through on a
+  multi-part question using every tool genuinely available. This
+  remains the one specific, named piece of unfinished work in this
+  eval set, rather than something to solve by another prompt tweak
+  without first deciding what "complete" should require.
+
+The other two items from the third round's list — the parking
+dataset's unresolved recency question, and testing against a
+genuinely sparse location — remain untouched and are not part of this
+eval set's active scope right now.
 
 ## What Would Come Next
 
-- **Tighten rule 5** to explicitly require stating a timestamp and any
-  known lag on time-sensitive questions, rather than leaving that to
-  the more general "flag uncertainty about location" wording — this is
-  the direct, specific fix for Test 5's regression.
 - **Define an eighth dimension**, something like *completeness within
   honest limits*, to formally score what Test 2's variation surfaced:
   whether an answer follows through on a multi-part question using all
