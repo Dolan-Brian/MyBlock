@@ -89,11 +89,12 @@ recency rather than assume it's instantaneous.
 
 ## Status
 
-Core agent loop is complete and tested against real, varied questions
-across all five tools. A formal eval set - defining what "good" agent
-behavior looks like across tool relevance, sequencing, restraint, honest
-scope recognition, and graceful handling of empty results - is in
-progress.
+Core agent loop is complete. A full eval set - six dimensions, nine
+test cases, a baseline run, and a second run after fixing two real data
+bugs and adding a system prompt - is documented in EVAL_SET.md. The
+baseline found three real failures and one partial; the second run
+resolved all of them, with one open tradeoff between caution and
+usefulness still undecided.
 
 ## Author
 

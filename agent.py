@@ -28,6 +28,40 @@ load_dotenv()
 
 client = Anthropic()
 
+# Added after the first eval run (see EVAL_SET.md) found four recurring
+# failure modes: stating facts that never came from a tool (Test 7),
+# presenting borough-wide data as if it were neighborhood-specific
+# (Test 1), treating an empty or zero result as evidence that nothing is
+# happening rather than as missing data (Tests 2, 5), and treating one
+# data point as if it showed a trend (Test 2). This prompt exists to
+# reduce those specific behaviors, and its effect should be checked
+# against a re-run, not assumed to have worked.
+SYSTEM_PROMPT = """You are a research assistant with access to real NYC \
+civic data tools. Follow these rules strictly:
+
+1. State only facts that came from a tool's returned data in this \
+conversation. Never state a specific address, zip code, distance, or \
+landmark detail unless it appeared in a tool result. If you want to \
+add general knowledge, label it clearly as such, separate from the data.
+
+2. Every tool here reports data at the borough level, not at the \
+neighborhood or address level. If the user asked about a neighborhood \
+or landmark, say plainly that the data reflects the whole borough, not \
+that specific area, before giving your answer.
+
+3. An empty or zero result is missing data, not a finding. Never \
+describe it as calm, quiet, safe, or good. Say plainly that no data \
+was available for that query and time window.
+
+4. A single number or a single time snapshot is not a trend. Only \
+describe something as improving, worsening, or changing over time if \
+the data itself came from a tool built to compare two time periods.
+
+5. If you are not confident a tool understood the location as intended \
+(for example, a neighborhood name rather than a borough), say so \
+explicitly rather than presenting the result as if it matched the \
+user's question exactly."""
+
 # Maps each tool's name (as Claude will refer to it) to the real Python
 # function that actually executes it. This is the bridge between what
 # Claude requests and what our own code does.
@@ -39,10 +73,10 @@ TOOL_FUNCTIONS = {
     "get_traffic_speeds": get_traffic_speeds,
 }
 
-# A safety and cost-control limit that prevents an unbounded loop. The loop
-# stops starting new rounds once this many tool calls have been made. It is
-# checked once per round, so a round in which Claude requests several tools
-# at once can push the total slightly past this number.
+# A hard safety and cost-control limit - prevents a genuinely unbounded
+# loop if something ever goes wrong. Set to 5, matching our five real
+# tools - a reasonable ceiling assuming a question might need each tool
+# called once, without allowing unlimited, runaway calls.
 MAX_TOOL_CALLS = 5
 
 
@@ -61,6 +95,7 @@ def run_agent(user_question):
         response = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=1500,
+            system=SYSTEM_PROMPT,
             tools=ALL_TOOLS,
             tool_choice={"type": "auto"},
             messages=messages

@@ -26,7 +26,7 @@ If the loop in agent.py changes, update this file too. MODEL must also match.
 import json
 from datetime import datetime
 
-from agent import client, ALL_TOOLS, TOOL_FUNCTIONS, MAX_TOOL_CALLS
+from agent import client, ALL_TOOLS, TOOL_FUNCTIONS, MAX_TOOL_CALLS, SYSTEM_PROMPT
 
 MODEL = "claude-haiku-4-5-20251001"
 RUNS_PER_QUESTION = 1
@@ -165,6 +165,7 @@ def run_traced(question):
         response = client.messages.create(
             model=MODEL,
             max_tokens=1500,
+            system=SYSTEM_PROMPT,
             tools=ALL_TOOLS,
             tool_choice={"type": "auto"},
             messages=messages,

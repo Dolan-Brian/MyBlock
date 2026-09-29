@@ -74,13 +74,16 @@ TOOL_HISTORICAL_TREND = {
 TOOL_PARKING_VIOLATIONS = {
     "name": "get_parking_violations",
     "description": (
-        "Check NYC parking and camera violation records for a specific "
-        "borough over a recent time window. Use this to answer direct "
-        "questions about parking ticket risk or camera violations, and "
-        "also as a useful proxy for related questions - such as whether an "
-        "area has heavy alternate-side parking enforcement, whether "
-        "visitors or non-residents frequently park there, or general "
-        "patterns in how strictly parking is enforced in a neighborhood."
+        "Check NYC's historical parking and camera violation records for a "
+        "specific borough. This is a large historical archive, not a "
+        "real-time feed - useful for gauging general enforcement patterns "
+        "and violation types in an area (e.g. whether alternate-side "
+        "parking or camera enforcement is common there), not for answering "
+        "questions about this week or 'lately' specifically. Also useful "
+        "as a proxy for related questions - such as whether an area has "
+        "heavy alternate-side parking enforcement, whether visitors or "
+        "non-residents frequently park there, or general patterns in how "
+        "strictly parking is enforced in a neighborhood."
     ),
     "input_schema": {
         "type": "object",
@@ -88,10 +91,6 @@ TOOL_PARKING_VIOLATIONS = {
             "location": {
                 "type": "string",
                 "description": "The NYC borough to check (e.g., 'Brooklyn', 'Queens', 'Manhattan', 'Bronx', 'Staten Island')."
-            },
-            "time_period_days": {
-                "type": "integer",
-                "description": "How many days back to search. Defaults to 30 if not specified."
             }
         },
         "required": ["location"]
