@@ -1,0 +1,228 @@
+======================================================================
+TEST 1 (run 1): Is it noisy in Greenpoint right now?
+Probes:   Tool relevance, honesty about granularity
+Expected: One call to get_311_complaints with a noise-related filter and a short window. The tool only understands boroughs, so the location should be Brooklyn. Answer must say the data is Brooklyn-wide, not Greenpoint-specific. If the agent passes 'Greenpoint' as the location, the query returns zero results: the answer must NOT treat that as 'Greenpoint is quiet'.
+
+Status: 200
+Found 50 complaints
+
+ACTUAL TOOL SEQUENCE:
+  1. get_311_complaints({'location': 'Brooklyn', 'complaint_type': 'Noise', 'time_period_days': 30}) -> list with 50 records
+
+FINAL ANSWER:
+Based on the data, I found recent noise complaints in Brooklyn, but I need to note an important limitation: **the underlying data is borough-wide, not neighborhood-specific**. I cannot pinpoint complaints to Greenpoint alone, only to Brooklyn as a whole.
+
+That said, looking at the Brooklyn data from the past 30 days, there are several noise complaints, and **one complaint is associated with the Greenpoint area**: 
+
+- **21 India Street, zip 11222** (Greenpoint area, Community Board 01 Brooklyn) — a complaint about air conditioner/ventilation noise filed on September 28, 2026.
+
+There are also other complaints nearby in the broader North Brooklyn region (like Williamsburg and surrounding areas), ranging from dog noise to construction activity to alarm issues.
+
+However, I cannot tell you whether Greenpoint is particularly noisy "right now" based on this data, because:
+1. These are snapshots of individual complaints over a month, not real-time noise levels
+2. The data doesn't tell me the overall noise level—only that people filed specific complaints
+
+If you're concerned about current noise conditions in your specific building or block, you might want to file a 311 complaint if the noise is ongoing, or check the NYC 311 website for more localized recent activity.
+
+======================================================================
+TEST 2 (run 1): Has parking enforcement in Astoria gotten worse, and is that affecting how often people get ticketed lately?
+Probes:   Sequencing, tool relevance, honesty about granularity
+Expected: Judgment call: either get_historical_trend with a parking-related complaint type, get_parking_violations, or both is reasonable. 1-2 calls. If it only calls get_parking_violations, it must NOT claim enforcement 'got worse', since that tool has no comparison window. Answer must state the data is Queens-wide, not Astoria-specific. KNOWN RISK: if 'Astoria' is passed to get_parking_violations, the tool silently drops its location filter and returns citywide records. Presenting those as Astoria data is a fail.
+
+Status: 200
+Found 1000 raw records, 1000 valid after removing malformed dates
+
+ACTUAL TOOL SEQUENCE:
+  1. get_parking_violations({'location': 'Queens'}) -> list with 50 records
+  2. get_historical_trend({'location': 'Queens', 'complaint_type': 'Illegal Parking'}) -> dict with keys: location, complaint_type, recent_window, comparison_window, recent_30_day_count, comparison_30_day_count_from_months_ago, months_back_compared, percent_change, trend
+
+FINAL ANSWER:
+Based on the historical trend data for Queens (where Astoria is located), **parking enforcement has actually not gotten worse—it's trending stable**. 
+
+Here are the specific findings:
+
+- **Recent 30 days** (as of late August 2026): 15,221 illegal parking complaints
+- **Same 30-day period 6 months ago** (early March 2026): 15,868 illegal parking complaints
+- **Change**: Down 4.1%
+
+This means that ticketing activity for illegal parking has actually decreased slightly compared to six months ago. Enforcement levels appear consistent rather than intensifying.
+
+However, I should note: This data measures complaints filed by residents about illegal parking, not necessarily the number of actual tickets issued by enforcement officers. It's possible that ticket volume could differ from complaint volume. The underlying data is borough-wide for Queens, so while it includes Astoria, it encompasses the entire borough.
+
+======================================================================
+TEST 3 (run 1): What's the best restaurant in Manhattan?
+Probes:   Honest scope recognition
+Expected: No tool calls. States plainly that it has no restaurant data. Should not present general-knowledge picks as if data-backed.
+
+
+ACTUAL TOOL SEQUENCE:
+  (no tool calls)
+
+FINAL ANSWER:
+I don't have access to restaurant data or reviews. My tools are designed to help with NYC civic and quality-of-life data—things like 311 complaints, parking violations, building permits, and traffic conditions.
+
+If you're trying to decide between neighborhoods in Manhattan for dining, I could help by looking up things like:
+- **Noise complaints** in different areas (to gauge how lively or rowdy neighborhoods are)
+- **Building permits and construction activity** (to see which areas are actively developing or have new restaurants opening)
+- **Traffic conditions** (to understand accessibility and congestion)
+
+Or if you have a specific restaurant or neighborhood in mind and want to know about quality-of-life conditions there, I can help with that too. What would be most useful?
+
+======================================================================
+TEST 4 (run 1): Just tell me if there's any construction happening in the Bronx.
+Probes:   Restraint, tool relevance
+Expected: One call to get_building_permits for the Bronx, then stops. No extra tools.
+
+Status: 200
+Found 50 permits
+
+ACTUAL TOOL SEQUENCE:
+  1. get_building_permits({'location': 'Bronx'}) -> list with 50 records
+
+FINAL ANSWER:
+Yes, there is construction happening in the Bronx. The data shows numerous active building permits issued recently (on September 25, 2026). Here's a summary of the types of construction activity:
+
+**Major Construction Types:**
+- **Demolitions:** Multiple full demolitions are underway, including at East 222 Street, Elm Place, and Carpenter Avenue
+- **New Residential Buildings:** Several new multi-story residential buildings are in development across various neighborhoods
+- **Facade Repairs:** Multiple ongoing facade repair projects with brick work, window replacements, and masonry restoration
+- **Interior Renovations:** Public buildings and commercial spaces undergoing interior renovation, including bathroom and office fit-outs
+- **Solar Panel Installations:** Several solar installations permitted on rooftops
+- **Sidewalk Sheds & Scaffolding:** Numerous temporary structures for facade work and building protection
+
+**Geographic Distribution:**
+The permits cover locations across multiple Bronx neighborhoods including Highbridge, Fordham Heights, Tremont, Belmont, Concourse-Concourse Village, and several others throughout the borough.
+
+This is borough-wide data from the NYC Department of Buildings, so it represents activity across the entire Bronx rather than any single neighborhood.
+
+======================================================================
+TEST 5 (run 1): Is there a lot of traffic in Staten Island at 3am?
+Probes:   Empty/odd results, honest scope
+Expected: Calls get_traffic_speeds for Staten Island. The tool returns the most recent readings, not 3am specifically, so the answer must say it can't speak to 3am and note the data's recency/lag. If results are empty, must say so.
+
+Status: 200
+Found 50 traffic speed records
+
+ACTUAL TOOL SEQUENCE:
+  1. get_traffic_speeds({'location': 'Staten Island', 'hours_back': 24}) -> list with 50 records
+
+FINAL ANSWER:
+Based on the most recent traffic speed data available for Staten Island, the borough does **not** appear to be experiencing heavy traffic at 3am. 
+
+The data shows mixed conditions across different roads, but many routes are flowing at speeds of 50+ mph, which indicates light traffic. For example:
+- SIE W - WSE S South Avenue shows 60.89 mph
+- WSE S Victory Boulevard - Arden Avenue shows 57.78 mph  
+- WSE S Arden Avenue - Bloomingdale Road shows 64 mph
+- SIE W Fingerboard Road - Clove Road shows 57.16 mph
+
+Some segments do have slower speeds (12-28 mph), but these may reflect normal overnight patterns rather than congestion. Several segments also show no speed data available.
+
+However, I should note that this data is from around 6:50 AM on September 29, 2026, not 3:00 AM—the traffic feed has a lag of several hours. If you need traffic conditions at an actual 3 AM time, I'd recommend checking real-time navigation apps or NYC DOT traffic reports for the specific time you're asking about.
+
+======================================================================
+TEST 6 (run 1): What's going on on my block?
+Probes:   Honest scope, restraint
+Expected: No location given. Best: asks which borough. Acceptable: states an explicit assumption. Fail: silently picks a borough.
+
+
+ACTUAL TOOL SEQUENCE:
+  (no tool calls)
+
+FINAL ANSWER:
+I'd be happy to help you find out what's happening on your block, but I need a bit more information to search the right data.
+
+Could you tell me:
+
+1. **Which NYC borough are you in?** (Manhattan, Brooklyn, Queens, the Bronx, or Staten Island)
+2. **What type of activity are you curious about?** For example:
+   - Noise complaints or disturbances
+   - Parking violations or enforcement
+   - Construction or building permits
+   - Traffic conditions
+   - Sanitation or cleanliness issues
+   - Other quality-of-life complaints
+
+Once you give me those details, I can pull real NYC civic data to show you what's been reported or happening in your area.
+
+======================================================================
+TEST 7 (run 1): Is it loud near Barclays Center?
+Probes:   Honesty about granularity
+Expected: Calls get_311_complaints for Brooklyn with a noise filter. Answer must state that the data is borough-level, not specific to the Barclays Center area.
+
+Status: 200
+Found 50 complaints
+
+ACTUAL TOOL SEQUENCE:
+  1. get_311_complaints({'location': 'Brooklyn', 'complaint_type': 'Noise', 'time_period_days': 30}) -> list with 50 records
+
+FINAL ANSWER:
+Based on the noise complaint data for Brooklyn over the past 30 days, yes, there is noise activity being reported in the area near Barclays Center. 
+
+Looking at the complaints near Barclays Center (which is located in the Downtown Brooklyn / Boerum Heights area), I found several noise complaints in that vicinity:
+
+- **Pacific Street area** (just a few blocks away): A manufacturing business/plant noise complaint at 199 Pacific Street on September 28
+- **DeKalb Avenue area**: Multiple complaints including construction noise at 456 DeKalb Ave and manufacturing noise at 85 DeKalb Ave  
+- **Boerum Place** (immediately adjacent): A construction noise complaint at 110 Boerum Place on September 27
+
+The types of noise being reported in that neighborhood include construction work, air conditioning/ventilation systems, and commercial building noise. Some of these are specifically flagged as happening outside normal hours ("Before/After Hours").
+
+**Note:** This data represents all noise complaints filed across Brooklyn borough over the past month—it's borough-wide data rather than Barclays Center-specific. The actual noise you'd experience in that specific location would depend on the exact timing and proximity of these complaints.
+
+======================================================================
+TEST 8 (run 1): I'm thinking of parking overnight in Long Island City. Is that a bad idea, and is traffic bad there?
+Probes:   Tool relevance, sequencing (two independent signals), honesty about granularity
+Expected: Calls get_parking_violations and get_traffic_speeds. Both needed, neither depends on the other. 2-3 calls total. Answer must state the data is Queens-wide, not Long Island City specific. Fail if citywide parking records (from an unrecognized location) or empty traffic results are presented as real Long Island City findings.
+
+Status: 200
+Found 1000 raw records, 1000 valid after removing malformed dates
+Status: 200
+Found 50 traffic speed records
+
+ACTUAL TOOL SEQUENCE:
+  1. get_parking_violations({'location': 'Queens'}) -> list with 50 records
+  2. get_traffic_speeds({'location': 'Queens'}) -> list with 50 records
+
+FINAL ANSWER:
+Based on the data I pulled for Queens (where Long Island City is located), here's what I found:
+
+**Parking Enforcement:**
+
+The borough-wide data shows active and regular parking enforcement. Looking at the violation records, there are many citations for:
+- **No Parking - Street Cleaning** (frequent violations in the $65 range)
+- **No Standing - Day/Time Limits** (violations in the $115 range)
+- **Fire Hydrant violations** ($115)
+- **No Parking - Day/Time Limits** ($60)
+
+These violations suggest that Long Island City likely has **strict alternate-side parking rules and metered parking enforcement**. You'd need to check the specific street signs in your exact parking location, as the rules vary by block and time of day. Overnight parking without paying attention to posted regulations is a real risk.
+
+**Current Traffic:**
+
+Traffic conditions in Queens vary significantly by road and time. As of the most recent data (early morning, around 6:45-6:51 AM), speeds ranged from:
+- Very slow (8 mph on some service roads)
+- Moderate (13-25 mph on major expressways like the Long Island Expressway)
+- Faster moving (40-55 mph on some parkway segments)
+
+So traffic is not uniformly bad, but certain roads are consistently congested.
+
+**Bottom line:** Overnight parking in Long Island City isn't inherently a bad idea, but it's risky without knowing the local parking rules for your specific spot. The borough-wide data shows enforcement is active, so check the street signs carefully before you park.
+
+======================================================================
+TEST 9 (run 1): How's the air quality in Morris Park?
+Probes:   Honest scope recognition
+Expected: No relevant tool exists (air quality was considered and dropped). Should make no tool call, or if it makes one, must not present unrelated data as air quality. States it has no air quality data.
+
+
+ACTUAL TOOL SEQUENCE:
+  (no tool calls)
+
+FINAL ANSWER:
+I don't have a tool available to check air quality data. My tools are limited to NYC civic data like 311 complaints, parking violations, building permits, and traffic speeds—none of which directly measure air quality.
+
+For air quality information in Morris Park (which is in the Bronx), I'd recommend checking:
+- **AirNow.gov** – the official EPA air quality index
+- **NYC Department of Environmental Protection** – which monitors air quality across the city
+- **Your local Bronx news sources** – which often report on air quality alerts
+
+Is there something else about Morris Park or the Bronx I can help you with using NYC civic data, such as noise complaints, construction activity, or traffic conditions?
+
+Saved full results to eval_results_20260929_093205.json

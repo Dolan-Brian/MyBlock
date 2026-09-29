@@ -8,16 +8,24 @@ arguments, and how many results came back) alongside the final answer.
 The "expected" field for each test was written BEFORE running anything, so
 scoring is against a standard set in advance, not rationalized afterward.
 
-Scoring itself is done by hand against the five dimensions:
+Scoring itself is done by hand against seven dimensions (see EVAL_SET.md
+for the full definitions and how they were arrived at):
   1. Tool relevance       - did it call tools that fit the question?
   2. Sequencing           - for multi-tool questions, a sensible order?
   3. Restraint            - did it stop once it had enough?
   4. Honest scope         - did it decline what its tools can't answer?
   5. Empty/odd results    - does the answer honestly reflect thin data?
+  6. Grounding            - does every claim trace to a tool, or is it
+                            labeled as general knowledge?
+  7. Appropriate confidence - does it act when a tool could plausibly
+                            help, rather than treating disclosure of a
+                            limit as a reason to stop and ask first?
 
-Known limitation: results vary between runs (the model is non-deterministic),
-so RUNS_PER_QUESTION = 1 is a first pass. Raise it to see how stable the
-behavior actually is.
+RUNS_PER_QUESTION is set to 3, not 1. Two prompt changes in this project
+each produced a real, visible shift in behavior on a single run, which
+means results at n=1 show what the model did on one roll, not what it
+reliably does. Running each question 3 times is the minimum needed to
+tell a stable pattern from a lucky or unlucky single pass.
 
 Note: the loop below deliberately mirrors agent.py rather than modifying it.
 If the loop in agent.py changes, update this file too. MODEL must also match.
@@ -29,7 +37,7 @@ from datetime import datetime
 from agent import client, ALL_TOOLS, TOOL_FUNCTIONS, MAX_TOOL_CALLS, SYSTEM_PROMPT
 
 MODEL = "claude-haiku-4-5-20251001"
-RUNS_PER_QUESTION = 1
+RUNS_PER_QUESTION = 3
 
 TEST_CASES = [
     {

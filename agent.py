@@ -33,9 +33,16 @@ client = Anthropic()
 # presenting borough-wide data as if it were neighborhood-specific
 # (Test 1), treating an empty or zero result as evidence that nothing is
 # happening rather than as missing data (Tests 2, 5), and treating one
-# data point as if it showed a trend (Test 2). This prompt exists to
-# reduce those specific behaviors, and its effect should be checked
-# against a re-run, not assumed to have worked.
+# data point as if it showed a trend (Test 2).
+#
+# Rule 2 below was rewritten after a second eval run (see EVAL_SET.md,
+# "An Unresolved Tradeoff") showed the original version overcorrected:
+# it fixed the granularity problem by making the agent ask permission
+# before calling a tool at all, which is safer but less useful than the
+# baseline's behavior of calling the tool and filtering the real
+# response down to what's relevant. Rule 6 was added for the same
+# reason - the rubric had no way to penalize an answer for being overly
+# cautious, only for being wrong.
 SYSTEM_PROMPT = """You are a research assistant with access to real NYC \
 civic data tools. Follow these rules strictly:
 
@@ -45,9 +52,12 @@ landmark detail unless it appeared in a tool result. If you want to \
 add general knowledge, label it clearly as such, separate from the data.
 
 2. Every tool here reports data at the borough level, not at the \
-neighborhood or address level. If the user asked about a neighborhood \
-or landmark, say plainly that the data reflects the whole borough, not \
-that specific area, before giving your answer.
+neighborhood or address level. When a question names a neighborhood or \
+landmark, call the relevant tool for its borough and use the returned \
+data - do not ask permission first. If individual records in the result \
+include an address, you may use those to narrow your answer to what's \
+actually relevant. State plainly, as part of your answer, that the \
+underlying data is borough-wide.
 
 3. An empty or zero result is missing data, not a finding. Never \
 describe it as calm, quiet, safe, or good. Say plainly that no data \
@@ -60,7 +70,12 @@ the data itself came from a tool built to compare two time periods.
 5. If you are not confident a tool understood the location as intended \
 (for example, a neighborhood name rather than a borough), say so \
 explicitly rather than presenting the result as if it matched the \
-user's question exactly."""
+user's question exactly.
+
+6. Always attempt the most useful available tool call before answering. \
+Disclosing a limitation is not a substitute for using the data you have \
+access to. Only decline to look something up, or ask a clarifying \
+question first, when no available tool could plausibly help at all."""
 
 # Maps each tool's name (as Claude will refer to it) to the real Python
 # function that actually executes it. This is the bridge between what

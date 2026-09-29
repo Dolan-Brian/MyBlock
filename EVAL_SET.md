@@ -2,9 +2,10 @@
 
 This documents the evaluation framework built for MyBlock's agent: the
 dimensions being scored, the nine test cases and the answer key written
-for each before any test was run, the baseline results, the root causes
-found and fixed, the system prompt added in response, and a second run
-against the same nine questions.
+for each before any test was run, and four rounds of testing — a
+baseline, two rounds of system-prompt changes each tested at a single
+run, and a final round at three runs per question to check whether the
+single-run results actually held up.
 
 ## Why This Exists
 
@@ -17,12 +18,12 @@ set scores the full trajectory: which tools were called, with what
 arguments, in what order, and whether the final answer is actually
 supported by what those tools returned.
 
-## The Six Dimensions
+## The Dimensions
 
 The first five were defined before writing any test case, based on what
 a genuine agent (as opposed to a scripted pipeline) actually has to get
-right. The sixth was added mid-project, after a specific failure the
-first five didn't have language for.
+right. The sixth and seventh were each added after a specific run
+surfaced a failure the existing dimensions didn't have language for.
 
 1. **Tool relevance** — did it call a tool that actually fits the
    question?
@@ -44,6 +45,16 @@ first five didn't have language for.
    "no data" as if it were a real, positive finding), and honest scope
    recognition is its mirror image (declining to answer rather than
    inventing an answer when no tool applies).
+7. **Appropriate confidence** (added after the second run) — does it
+   act on an available tool when the tool could plausibly help, rather
+   than treating disclosure of a limitation as a reason to stop and ask
+   permission first? The second run showed these are not the same
+   thing: an answer can honestly state a limit and still be less useful
+   than one that acted on the data it had while stating the same limit.
+
+An eighth dimension, something like *completeness within honest
+limits*, is proposed but not yet formally defined — see "Third Round"
+below.
 
 This set of terms was arrived at independently, from watching real
 output, before checking whether the field had standard names for any of
@@ -155,7 +166,7 @@ were supplied from the model's own memory, stated with the same
 confidence as the real, tool-sourced data around them, and both are
 wrong.
 
-## The System Prompt
+## System Prompt, Version 1
 
 `agent.py` had no system prompt at all going into the baseline. Five
 rules were added directly in response to what the baseline run showed,
@@ -173,8 +184,8 @@ each traceable to a specific test:
 
 ## Second Run
 
-Same nine questions, same run count, system prompt added, plus the two
-parking-tool fixes already in place.
+Same nine questions, one run each, version 1 of the system prompt
+added, plus the two parking-tool fixes already in place.
 
 | # | Verdict | What changed |
 |---|---|---|
@@ -190,44 +201,163 @@ parking-tool fixes already in place.
 
 Second run: 8 pass, 1 pass-with-a-caveat.
 
-Every failure and the one partial from the baseline are resolved.
-Test 8's pass is worth flagging as not fully proven: the parking tool
-happened to return real data on this run because of the earlier fix,
-not because of anything the system prompt does when a location genuinely
-returns nothing. If that call had come back empty again, whether the new
-prompt would have stopped the agent from repeating the baseline's "safe
-from tickets" claim was not actually tested.
+Every failure and the one partial from the baseline are resolved on
+this run. Test 8's pass was flagged at the time as not fully proven:
+the parking tool happened to return real data because of the earlier
+fix, not because of anything the prompt does when a location genuinely
+returns nothing empty. Whether the prompt would have stopped a repeat
+of the baseline's "safe from tickets" claim in that case was not
+actually tested here.
 
-## An Unresolved Tradeoff, Not Yet in the Rubric
+## An Unresolved Tradeoff, Found in the Second Run
 
-Tests 1 and 2 show the same pattern from a different angle: made safer
-by the system prompt, both became less useful. Test 1 no longer tells
-you anything about Greenpoint until you say yes to a follow-up question,
-where the baseline actually filtered real data down to real Greenpoint
-addresses. Test 2 states its limits accurately and then stops, without
-calling `get_historical_trend`, which existed and could have partially
-answered the question.
+Tests 1 and 2 showed the same pattern from a different angle: made
+safer by the prompt, both became less useful. Test 1 told the user
+nothing about Greenpoint until they said yes to a follow-up question,
+where the baseline had actually filtered real data down to real
+Greenpoint addresses. Test 2 stated its limits accurately and then
+stopped, without calling `get_historical_trend`, which existed and
+could have partially answered the question.
 
-None of the six dimensions defined here penalize this, since none of
-them measure whether an honest decline was in fact the most useful
-available response. Whether "ask before proceeding" is the right default
-or overcautious is a real product decision, not something the eval
-framework currently has an opinion on. A seventh dimension —
-something like *helpfulness within honest limits* — is the natural next
-addition, and it would need real judgment calls about when caution stops
-being a virtue.
+None of the six dimensions defined at that point penalized this, since
+none of them measured whether an honest decline was in fact the most
+useful available response. This is what dimension 7, appropriate
+confidence, was written to address.
+
+## System Prompt, Version 2
+
+Rule 2 was rewritten, and rule 6 was added, specifically to fix the
+tradeoff above rather than to address a new failure:
+
+- **Rule 2, revised:** when a question names a neighborhood or
+  landmark, call the relevant tool for its borough and use the
+  returned data — do not ask permission first. If individual records
+  include an address, narrow the answer to what's actually relevant.
+  State plainly, as part of the answer, that the underlying data is
+  borough-wide.
+- **Rule 6, new:** always attempt the most useful available tool call
+  before answering. Disclosing a limitation is not a substitute for
+  using the data available. Only decline or ask a clarifying question
+  first when no available tool could plausibly help at all.
+
+### Result, tested at one run each
+
+Test 1 went back to calling the tool and using real returned data,
+this time with the borough-wide caveat included in the same answer
+rather than substituted for it — the baseline's usefulness with the
+honesty added, not traded away. Test 2 called both the parking tool
+and the trend tool, correctly used the trend tool's comparison window
+to directly answer whether enforcement had gotten worse, and correctly
+avoided treating the parking tool's raw list as a trend. All nine
+tests passed on this single-run check.
+
+Two things were flagged as needing more than a single run to trust:
+whether Test 7's newly specific answer (real addresses this time, or
+invented ones again) was genuinely grounded, and whether one pass at
+9-for-9 reflected the model's typical behavior or a good roll — the
+same caveat attached to every prior single-run result in this
+document.
+
+## Third Round: RUNS_PER_QUESTION Raised to 3
+
+The version-2 prompt was tested once per question. A single run can't
+distinguish a genuine fix from a lucky roll, so the same nine questions
+were run three times each, unchanged, before trusting the result.
+`RUNS_PER_QUESTION` was raised from 1 to 3 in `eval_runner.py` for this
+round and going forward.
+
+Six of nine were stable across all three runs, with identical tool
+calls and consistent, correct answers: Tests 3, 4, 6, and 9 (no tool
+available, correctly declined or asked for clarification, all three
+times) and Test 8 (same two tools, same arguments, same conclusions,
+all three times).
+
+Three questions surfaced genuine variation. None of these are new
+failures against the written rubric — each individual run still passes
+its stated expected behavior — but running the same question three
+times revealed instability the single-run results couldn't show.
+
+### Test 1 (Greenpoint noise): stable on honesty, unstable on the time window
+
+Across the three runs, `time_period_days` was 1, 30, and 1. The
+one-day window returned zero records twice; the thirty-day window
+returned 50 records including a real Greenpoint address once. This
+argument was never specified in the question and is left entirely to
+the model's judgment each time it decides to call the tool, so "right
+now" gets interpreted differently on different attempts.
+
+The result is genuinely reassuring rather than concerning: both
+zero-result runs handled the empty case correctly, stating plainly
+that no complaints were found, that the data is borough-wide, and
+explicitly that an absence of complaints does not mean the area is
+quiet. That is precisely what rules 2 and 3 were written to produce,
+and it held on the harder case (empty data) as well as the easier one
+(a real match). The instability here is in what the agent chooses to
+ask for, not in whether it's honest about what it gets back.
+
+### Test 2 (Astoria parking trend): stable on honesty, unstable on completeness
+
+One of three runs called both `get_parking_violations` and
+`get_historical_trend`, and used the trend tool's comparison window to
+directly answer whether enforcement had gotten worse. The other two
+runs called only `get_parking_violations`, correctly declined to claim
+a trend from a tool with no comparison window, stated the borough-wide
+caveat, and offered to check a trend tool next rather than calling it
+automatically.
+
+All three runs are honest. None invents a trend it doesn't have
+evidence for. But a user asking this question once gets a materially
+different amount of help depending on the roll: one in three times, a
+complete, direct answer; two in three times, half an answer and an
+offer to continue. This is closer to a restraint and completeness
+question than a grounding one, and doesn't fit cleanly into any of the
+seven dimensions defined so far.
+
+### Test 5 (Staten Island traffic at 3am): a real, partial regression
+
+This is the one result worth acting on directly. Two of three runs did
+what the version-2 prompt was meant to do: named the data's actual
+timestamp, called it borough-wide, and explicitly flagged a lag of
+several hours between collection and the present moment. The third run
+did none of that. It described the data as "real-time," gave no
+timestamp, and stated flatly that Staten Island has minimal traffic at
+3am, with no acknowledgment that the data might not actually reach
+that hour.
+
+This is a narrower version of the exact failure the baseline had for
+this test: treating data with no verified connection to the asked-about
+time as if it answered the question anyway. It's less severe than the
+original (it still correctly reads `-101` status codes as missing data
+rather than as empty roads), but the core problem is back in one run
+out of three. Rule 5 currently says to flag uncertainty about location
+matching; it does not explicitly require stating the data's timestamp
+and lag on every time-sensitive question, which is the likeliest reason
+one run skipped it while the other two didn't.
+
+## Honest Summary of Where Things Stand
+
+Six of nine questions are genuinely stable across repeated attempts.
+Two (Tests 1 and 2) are stable on the dimension that matters most,
+honesty, but reveal real variation in scope or completeness the rubric
+doesn't yet score. One (Test 5) shows the original grounding failure
+recurring at roughly one-in-three, meaning the version-2 prompt reduced
+but did not eliminate it.
 
 ## What Would Come Next
 
-- Decide and encode the tradeoff above, rather than let the system
-  prompt's current behavior stand as the unexamined default.
-- Re-run at `RUNS_PER_QUESTION = 3` to see which of these results are
-  stable across repeated attempts, particularly Test 8's now-working
-  parking call and Test 1's new caution.
-- Investigate the parking dataset's recency question properly, using
-  its published metadata rather than the query patterns that produced
-  contradictory results in this session.
-- Decide whether to test with a location the agent should recognize as
-  genuinely too sparse to answer well (a low-complaint neighborhood),
-  since every location tested so far happened to return substantial
-  real data once the tool worked correctly.
+- **Tighten rule 5** to explicitly require stating a timestamp and any
+  known lag on time-sensitive questions, rather than leaving that to
+  the more general "flag uncertainty about location" wording — this is
+  the direct, specific fix for Test 5's regression.
+- **Define an eighth dimension**, something like *completeness within
+  honest limits*, to formally score what Test 2's variation surfaced:
+  whether an answer follows through on a multi-part question using all
+  the tools genuinely available, not just whether it avoids overclaiming.
+- **Investigate the parking dataset's recency question properly**,
+  using its published metadata rather than the query patterns that
+  produced contradictory results earlier in this project.
+- **Decide whether to test with a genuinely sparse location** — one the
+  agent should recognize as having thin real data — since every
+  location tested so far has returned substantial real data once each
+  tool worked correctly, meaning "convincingly handling real scarcity"
+  hasn't actually been tested yet.
