@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyBlock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sedgwick+Ave+Display&family=Public+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --steel-hi: #D9DCDD;
+    --steel: #A9AEB1;
+    --steel-lo: #6F7579;
+    --glass: #1E2427;
+    --concrete: #4A4945;
+    --paper: #E7E6E1;
+    --paper-shade: #D6D4CD;
+    --ink: #000000;
+    --ink-soft: #55534E;
+    --edge: #EE6A24;          /* NYC orange, from the piece */
+    --tag: "Sedgwick Ave Display", "Marker Felt", "Comic Sans MS", cursive;
+    --body: "Public Sans", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+
+  body {
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--concrete);
+  }
+
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+
+
+  .wallhero {
+    position: relative;
+    overflow: hidden;
+    background-color: #8F8F8B;
+    background-image:
+      radial-gradient(ellipse at 20% 30%, rgba(0,0,0,.18), transparent 60%),
+      radial-gradient(ellipse at 85% 80%, rgba(0,0,0,.22), transparent 55%),
+      url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27240%27%20height%3D%27120%27%3E%3Crect%20width%3D%27240%27%20height%3D%27120%27%20fill%3D%27%235E5E5A%27/%3E%3Crect%20x%3D%272%27%20y%3D%272%27%20width%3D%27116%27%20height%3D%2726%27%20fill%3D%27%238F8F8B%27/%3E%3Crect%20x%3D%27122%27%20y%3D%272%27%20width%3D%27116%27%20height%3D%2726%27%20fill%3D%27%2395958F%27/%3E%3Crect%20x%3D%27-58%27%20y%3D%2732%27%20width%3D%27116%27%20height%3D%2726%27%20fill%3D%27%2395958F%27/%3E%3Crect%20x%3D%2762%27%20y%3D%2732%27%20width%3D%27116%27%20height%3D%2726%27%20fill%3D%27%238F8F8B%27/%3E%3Crect%20x%3D%27182%27%20y%3D%2732%27%20width%3D%27116%27%20height%3D%2726%27%20fill%3D%27%23A3A39F%27/%3E%3Crect%20x%3D%272%27%20y%3D%2762%27%20width%3D%27116%27%20height%3D%2726%27%20fill%3D%27%2395958F%27/%3E%3Crect%20x%3D%27122%27%20y%3D%2762%27%20width%3D%27116%27%20height%3D%2726%27%20fill%3D%27%23878783%27/%3E%3Crect%20x%3D%27-58%27%20y%3D%2792%27%20width%3D%27116%27%20height%3D%2726%27%20fill%3D%27%2395958F%27/%3E%3Crect%20x%3D%2762%27%20y%3D%2792%27%20width%3D%27116%27%20height%3D%2726%27%20fill%3D%27%239A9A96%27/%3E%3Crect%20x%3D%27182%27%20y%3D%2792%27%20width%3D%27116%27%20height%3D%2726%27%20fill%3D%27%2395958F%27/%3E%3C/svg%3E");
+    background-size: auto, auto, 180px 90px;
+    padding: 48px 16px 0;
+  }
+  .wallhero::after {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    pointer-events: none;
+  }
+  .piece { display: block; width: 100%; max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+  .tag-red { position: absolute; left: -10px; top: 38%; width: clamp(90px, 14vw, 190px); z-index: 0; }
+  .tag-black { position: absolute; right: -6px; top: 52%; width: clamp(80px, 12vw, 160px); z-index: 0; }
+  .tagline {
+    position: relative; z-index: 1;
+    max-width: 1100px; margin: 4px auto 0;
+    font-family: "Sedgwick Ave Display", "Marker Felt", "Comic Sans MS", cursive;
+    font-size: clamp(22px, 3.6vw, 38px);
+    color: #111;
+    transform: rotate(-1.5deg);
+    padding: 0 6% 22px;
+    text-align: right;
+  }
+  .grass { position: absolute; bottom: 0; width: clamp(60px, 9vw, 120px); z-index: 2; }
+  .grass.l { left: 4%; } .grass.r { right: 2%; transform: scaleX(-1); }
+  .curb { height: 22px; background: linear-gradient(180deg, #C9C7C1 0 40%, #A7A59F 40% 100%); border-bottom: 3px solid #1C1C1A; }
+
+  /* ---------- the platform ---------- */
+  .platform {
+    padding: 44px 16px 80px;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.25) 0 2px, transparent 2px 160px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.25) 0 2px, transparent 2px 160px),
+      var(--concrete);
+  }
+
+  .wall { max-width: 720px; margin: 0 auto; }
+
+  .sheet {
+    background-color: var(--paper);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    box-shadow: 0 2px 0 rgba(0,0,0,.25), 0 14px 24px -12px rgba(0,0,0,.6);
+  }
+
+  .askcard {
+    padding: 24px 24px 26px;
+    margin-bottom: 40px;
+    transform: rotate(-.6deg);
+  }
+
+  .askcard h2 {
+    font-weight: 900;
+    font-size: clamp(30px, 6vw, 44px);
+    line-height: 1.02;
+    letter-spacing: -.01em;
+    margin: 0 0 18px;
+  }
+
+  .ask { display: flex; gap: 8px; margin-bottom: 18px; }
+
+  .ask input {
+    flex: 1; min-width: 0;
+    font: inherit;
+    padding: 12px 14px;
+    border: 3px solid var(--ink);
+    background: #fff;
+    border-radius: 0;
+  }
+
+  .ask button {
+    font: inherit;
+    font-weight: 900;
+    font-size: 19px;
+    padding: 0 22px;
+    border: 3px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    cursor: pointer;
+    border-radius: 0;
+  }
+
+  .ask button:hover { background: var(--edge); color: var(--ink); }
+
+  .tryline { font-size: 15px; color: var(--ink-soft); margin: 0 0 8px; }
+
+  .samples {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin: 0; padding: 0; list-style: none;
+  }
+
+  .samples button {
+    font: inherit;
+    font-size: 15px;
+    text-align: left;
+    padding: 6px 10px;
+    background: transparent;
+    border: 2px dashed var(--ink);
+    cursor: pointer;
+    color: var(--ink);
+  }
+
+  .samples button:hover,
+  .samples button[aria-pressed="true"] {
+    background: var(--ink); color: var(--paper); border-style: solid;
+  }
+
+  :focus-visible { outline: 3px solid var(--edge); outline-offset: 3px; }
+
+  .notice { padding: 24px 24px 0; margin-bottom: 32px; }
+  .notice.paste { animation: paste .35s ease-out; }
+
+  @keyframes paste {
+    from { transform: scale(1.03) rotate(.6deg); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+  }
+
+  .q { font-weight: 800; font-size: 26px; line-height: 1.1; margin: 0 0 14px; }
+  .answer p { margin: 0 0 12px; max-width: 62ch; }
+
+  .checked { margin: 16px 0 20px; font-size: 15px; }
+  .checked h3 { font-size: 15px; font-weight: 800; margin: 0 0 4px; }
+  .checked ol { margin: 0; padding-left: 22px; }
+  .checked .none { margin: 0; color: var(--ink-soft); }
+
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin: 0 -24px;
+    border-top: 3px solid var(--ink);
+    background: var(--paper-shade);
+  }
+
+  .strip div {
+    padding: 10px 12px 12px 24px;
+    border-right: 1px solid rgba(0,0,0,.25);
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .strip div:last-child { border-right: 0; }
+  .strip dt { font-weight: 800; margin-bottom: 2px; }
+  .strip dd { margin: 0; }
+  .strip .warn { background: var(--edge); }
+
+  .sample-flag {
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: 8px 24px 10px;
+    margin: 0 -24px;
+    border-top: 1px solid rgba(0,0,0,.2);
+  }
+
+  .footer-note {
+    color: var(--paper);
+    opacity: .7;
+    font-size: 14px;
+    max-width: 62ch;
+  }
+
+  @media (max-width: 560px) {
+    .tag-black { display: none; }
+    .tag-red { top: 30%; width: 70px; }
+    .wallhero { padding-top: 28px; }
+    .windows { gap: 10px; padding-top: 30px; }
+    .window, .door { height: 70px; border-width: 4px; }
+    .door { height: 88px; }
+    .window:nth-child(n+3) { display: none; }
+    .tagline { padding-bottom: 18px; }
+    .skirt { height: 30px; }
+    .askcard { padding: 20px 18px 22px; }
+    .notice { padding: 20px 18px 0; }
+    .strip { grid-template-columns: 1fr; margin: 0 -18px; }
+    .strip div { border-right: 0; border-bottom: 1px solid rgba(0,0,0,.25); padding-left: 18px; }
+    .sample-flag { margin: 0 -18px; padding-left: 18px; }
+    .ask button { padding: 0 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .notice.paste { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <header class="wallhero">
+    <svg class="tag-red" viewBox="0 0 200 110" aria-hidden="true"><path d="M10 80 C30 20, 40 20, 38 70 S70 10, 80 60 L95 30 C100 70,120 70,128 35 L150 52 L190 20 M150 52 L132 88 M60 92 C90 84,130 86,170 70" fill="none" stroke="#D3242B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="tag-black" viewBox="0 0 170 100" aria-hidden="true"><path d="M8 70 C14 30,30 28,26 72 M26 50 L52 46 M58 74 L66 26 L82 72 M64 54 L80 52 M96 30 C88 60,98 76,112 70 M120 28 L122 74 L148 70 M10 88 C60 80,110 82,160 88" fill="none" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1 style="margin:0"><svg class="piece" viewBox="-90 -318 1740 419" role="img" aria-labelledby="pieceTitle">
+  <title id="pieceTitle">MyBlock</title>
+  <defs>
+    <pattern id="dots" patternUnits="userSpaceOnUse" width="220" height="220">
+      <rect width="220" height="220" fill="#EE6A24"/>
+      <circle cx="179" cy="177" r="16" fill="#4C86FF"/><circle cx="111" cy="126" r="16" fill="#2F6BEA"/><circle cx="106" cy="131" r="20" fill="#2F6BEA"/><circle cx="99" cy="35" r="6" fill="#F89A3C"/><circle cx="133" cy="126" r="26" fill="#4C86FF"/><circle cx="139" cy="132" r="16" fill="#2F6BEA"/><circle cx="23" cy="115" r="20" fill="#2F6BEA"/><circle cx="46" cy="56" r="6" fill="#2F6BEA"/><circle cx="77" cy="127" r="16" fill="#2F6BEA"/><circle cx="62" cy="73" r="20" fill="#2F6BEA"/><circle cx="40" cy="136" r="26" fill="#4C86FF"/><circle cx="199" cy="171" r="20" fill="#1E4FC2"/><circle cx="161" cy="113" r="12" fill="#2F6BEA"/><circle cx="123" cy="28" r="6" fill="#2F6BEA"/><circle cx="88" cy="200" r="12" fill="#2F6BEA"/><circle cx="51" cy="193" r="9" fill="#4C86FF"/>
+    </pattern>
+    <g id="letters"><use href="#l0"/><use href="#l1"/><use href="#l2"/><use href="#l3"/><use href="#l4"/><use href="#l5"/><use href="#l6"/></g>
+    <path id="l0" d="M0.0 0.0H59.765625V-84.375C59.765625 -100.48828125 58.30078125 -136.669921875 57.71484375 -167.724609375C64.892578125 -135.64453125 73.828125 -101.513671875 79.1015625 -84.375L104.8828125 0.0H154.1015625L179.443359375 -84.375C184.86328125 -102.099609375 194.091796875 -138.134765625 201.123046875 -171.38671875C200.537109375 -139.599609375 198.92578125 -101.07421875 198.92578125 -84.375V0.0H258.69140625V-218.26171875H165.087890625L145.751953125 -150.0C141.2109375 -134.033203125 134.619140625 -100.48828125 129.4921875 -71.923828125C124.51171875 -100.48828125 117.626953125 -134.033203125 113.0859375 -150.0L93.45703125 -218.26171875H0.0Z" transform="rotate(-6 129.3 -109.1) translate(0 6)"/><path id="l1" d="M361.990234375 0.0H420.876953125V-75.87890625L499.83203125 -218.26171875H430.544921875L401.1015625 -152.34375C397.439453125 -144.287109375 394.509765625 -136.23046875 391.7265625 -127.1484375C388.650390625 -136.23046875 385.57421875 -144.287109375 381.765625 -152.34375L350.271484375 -218.26171875H280.69140625L361.990234375 -75.87890625Z" transform="rotate(5 390.3 -109.1) translate(0 -10)"/><path id="l2" d="M521.83203125 0.0H624.6640625C671.978515625 0.0 701.12890625 -25.927734375 701.12890625 -61.81640625C701.12890625 -92.578125 678.5703125 -112.646484375 650.4453125 -113.671875V-116.015625C675.787109375 -120.849609375 692.6328125 -139.599609375 692.6328125 -163.76953125C692.6328125 -196.875 666.265625 -218.26171875 616.4609375 -218.26171875H521.83203125ZM581.01171875 -47.16796875V-93.45703125H609.72265625C627.59375 -93.45703125 638.7265625 -84.814453125 638.7265625 -69.43359375C638.7265625 -54.931640625 628.619140625 -47.16796875 608.84375 -47.16796875ZM581.01171875 -130.078125V-171.6796875H606.20703125C620.85546875 -171.6796875 631.6953125 -164.208984375 631.6953125 -150.87890625C631.6953125 -137.40234375 620.85546875 -130.078125 605.328125 -130.078125Z" transform="rotate(-3 611.5 -109.1) translate(0 4)"/><path id="l3" d="M723.12890625 0.0H870.4921875V-47.75390625H782.30859375V-218.26171875H723.12890625Z" transform="rotate(6 796.8 -109.1) translate(0 -6)"/><path id="l4" d="M998.546875 2.9296875C1057.873046875 2.9296875 1104.6015625 -36.181640625 1104.6015625 -108.984375C1104.6015625 -181.93359375 1057.873046875 -221.19140625 998.546875 -221.19140625C938.927734375 -221.19140625 892.4921875 -181.93359375 892.4921875 -108.984375C892.4921875 -36.62109375 938.927734375 2.9296875 998.546875 2.9296875ZM998.546875 -48.6328125C969.25 -48.6328125 953.4296875 -69.873046875 953.4296875 -108.984375C953.4296875 -148.2421875 969.25 -169.62890625 998.546875 -169.62890625C1027.990234375 -169.62890625 1043.6640625 -148.2421875 1043.6640625 -108.984375C1043.6640625 -69.873046875 1027.990234375 -48.6328125 998.546875 -48.6328125Z" transform="rotate(-5 998.5 -109.1) translate(0 8)"/><path id="l5" d="M1231.77734375 2.9296875C1295.791015625 2.9296875 1328.1640625 -42.48046875 1331.09375 -79.6875H1271.03515625C1268.10546875 -61.083984375 1254.921875 -48.6328125 1233.2421875 -48.6328125C1204.23828125 -48.6328125 1187.5390625 -68.994140625 1187.5390625 -108.984375C1187.5390625 -147.0703125 1203.798828125 -169.62890625 1233.53515625 -169.62890625C1255.5078125 -169.62890625 1268.3984375 -157.177734375 1270.7421875 -138.57421875H1330.80078125C1325.380859375 -191.30859375 1286.123046875 -221.19140625 1231.77734375 -221.19140625C1173.037109375 -221.19140625 1126.6015625 -181.93359375 1126.6015625 -108.984375C1126.6015625 -36.474609375 1171.865234375 2.9296875 1231.77734375 2.9296875Z" transform="rotate(4 1228.8 -109.1) translate(0 -4)"/><path id="l6" d="M1353.09375 0.0H1412.2734375V-54.4921875L1439.2265625 -85.400390625L1490.349609375 0.0H1560.076171875L1479.65625 -124.365234375L1555.974609375 -218.26171875H1485.80859375L1442.44921875 -162.158203125C1427.947265625 -143.26171875 1418.865234375 -129.931640625 1411.248046875 -115.869140625L1412.2734375 -171.38671875V-218.26171875H1353.09375Z" transform="rotate(-7 1456.6 -109.1) translate(0 6)"/>
+  </defs>
+  <g fill="#5BB8F5" stroke="#1C1C1C" stroke-width="4"><circle cx="379" cy="-196" r="58"/><circle cx="256" cy="-204" r="58"/><circle cx="1415" cy="-43" r="74"/><circle cx="357" cy="-101" r="52"/><circle cx="282" cy="-195" r="50"/><circle cx="1430" cy="-37" r="76"/><circle cx="1237" cy="-176" r="54"/><circle cx="973" cy="-58" r="78"/><circle cx="1358" cy="-199" r="67"/><circle cx="1041" cy="-107" r="48"/><circle cx="740" cy="-199" r="82"/><circle cx="1336" cy="-98" r="54"/><circle cx="1402" cy="-93" r="80"/><circle cx="1309" cy="-107" r="59"/><circle cx="930" cy="-124" r="47"/><circle cx="484" cy="-40" r="42"/><circle cx="-30" cy="-168" r="10" fill="none" stroke="#1C1C1C" stroke-width="3"/><circle cx="1600" cy="-188" r="14" fill="none" stroke="#1C1C1C" stroke-width="3"/><circle cx="1620" cy="-79" r="9" fill="none" stroke="#1C1C1C" stroke-width="3"/><circle cx="780" cy="-258" r="8" fill="none" stroke="#1C1C1C" stroke-width="3"/></g>
+  <use href="#letters" transform="translate(14 18)" fill="#000" stroke="#000" stroke-width="58" stroke-linejoin="round"/>
+  <g><use href="#l0" fill="#000" stroke="#000" stroke-width="52" stroke-linejoin="round"/><use href="#l0" fill="#fff" stroke="#fff" stroke-width="38" stroke-linejoin="round"/><use href="#l0" fill="url(#dots)" stroke="url(#dots)" stroke-width="30" stroke-linejoin="round"/></g><g><use href="#l1" fill="#000" stroke="#000" stroke-width="52" stroke-linejoin="round"/><use href="#l1" fill="#fff" stroke="#fff" stroke-width="38" stroke-linejoin="round"/><use href="#l1" fill="url(#dots)" stroke="url(#dots)" stroke-width="30" stroke-linejoin="round"/></g><g><use href="#l2" fill="#000" stroke="#000" stroke-width="52" stroke-linejoin="round"/><use href="#l2" fill="#fff" stroke="#fff" stroke-width="38" stroke-linejoin="round"/><use href="#l2" fill="url(#dots)" stroke="url(#dots)" stroke-width="30" stroke-linejoin="round"/><ellipse cx="612.1" cy="-66.3" rx="42.9" ry="37.1" fill="url(#dots)" transform="rotate(-3 612.1 -66.3)"/><ellipse cx="612.1" cy="-66.3" rx="14" ry="25" fill="#000" stroke="#fff" stroke-width="5" transform="rotate(-3 612.1 -66.3)"/><ellipse cx="604.4" cy="-146.6" rx="39.3" ry="34.8" fill="url(#dots)" transform="rotate(-3 604.4 -146.6)"/><ellipse cx="604.4" cy="-146.6" rx="14" ry="25" fill="#000" stroke="#fff" stroke-width="5" transform="rotate(-3 604.4 -146.6)"/></g><g><use href="#l3" fill="#000" stroke="#000" stroke-width="52" stroke-linejoin="round"/><use href="#l3" fill="#fff" stroke="#fff" stroke-width="38" stroke-linejoin="round"/><use href="#l3" fill="url(#dots)" stroke="url(#dots)" stroke-width="30" stroke-linejoin="round"/></g><g><use href="#l4" fill="#000" stroke="#000" stroke-width="52" stroke-linejoin="round"/><use href="#l4" fill="#fff" stroke="#fff" stroke-width="38" stroke-linejoin="round"/><use href="#l4" fill="url(#dots)" stroke="url(#dots)" stroke-width="30" stroke-linejoin="round"/><ellipse cx="999.2" cy="-101.2" rx="59.1" ry="74.5" fill="url(#dots)" transform="rotate(-5 999.2 -101.2)"/><ellipse cx="999.2" cy="-101.2" rx="14" ry="25" fill="#000" stroke="#fff" stroke-width="5" transform="rotate(-5 999.2 -101.2)"/></g><g><use href="#l5" fill="#000" stroke="#000" stroke-width="52" stroke-linejoin="round"/><use href="#l5" fill="#fff" stroke="#fff" stroke-width="38" stroke-linejoin="round"/><use href="#l5" fill="url(#dots)" stroke="url(#dots)" stroke-width="30" stroke-linejoin="round"/></g><g><use href="#l6" fill="#000" stroke="#000" stroke-width="52" stroke-linejoin="round"/><use href="#l6" fill="#fff" stroke="#fff" stroke-width="38" stroke-linejoin="round"/><use href="#l6" fill="url(#dots)" stroke="url(#dots)" stroke-width="30" stroke-linejoin="round"/></g>
+</svg></h1>
+    <p class="tagline">what's going on on my block?</p>
+    <svg class="grass l" viewBox="0 0 120 90" aria-hidden="true"><path d="M10 90 L22 30 L30 90 M28 90 L46 8 L50 90 M46 90 L70 22 L66 90 M62 90 L92 40 L80 90 M78 90 L110 56 L94 90" fill="#4FB43A" stroke="#2E7D22" stroke-width="2" stroke-linejoin="round"/></svg>
+    <svg class="grass r" viewBox="0 0 120 90" aria-hidden="true"><path d="M10 90 L22 30 L30 90 M28 90 L46 8 L50 90 M46 90 L70 22 L66 90 M62 90 L92 40 L80 90 M78 90 L110 56 L94 90" fill="#4FB43A" stroke="#2E7D22" stroke-width="2" stroke-linejoin="round"/></svg>
+  </header>
+  <div class="curb" aria-hidden="true"></div>
+
+
+  <main class="platform">
+    <div class="wall">
+      <section class="askcard sheet">
+        <h2>Ask about your neighborhood</h2>
+        <form class="ask" id="ask">
+          <label for="question" class="visually-hidden">Your question</label>
+          <input id="question" type="text" placeholder="Noise, parking, construction, traffic" autocomplete="off">
+          <button type="submit">Ask</button>
+        </form>
+        <p class="tryline">Live answers aren't connected yet. Try a sample:</p>
+        <ul class="samples" id="samples"></ul>
+      </section>
+
+      <div id="answers" aria-live="polite"></div>
+
+      <p class="footer-note">MyBlock answers from NYC Open Data: 311 complaints, complaint trends, parking and camera violations, building permits, and traffic speeds. All data is borough-level.</p>
+    </div>
+  </main>
+
+<script>
+  const SAMPLES = [
+    {
+      id: "greenpoint",
+      q: "Is it noisy in Greenpoint right now?",
+      answer: [
+        "Brooklyn logged 412 noise complaints to 311 in the last day. About 30 of them have Greenpoint addresses, mostly loud music and parties along Manhattan Avenue and Franklin Street.",
+        "This data covers all of Brooklyn. I narrowed it to Greenpoint using the address on each complaint."
+      ],
+      checked: ["311 complaints: noise, Brooklyn, last 1 day"],
+      source: "NYC 311",
+      asOf: "Today, 9:14 AM",
+      covers: "All of Brooklyn, narrowed by address",
+      warn: false
+    },
+    {
+      id: "astoria",
+      q: "Has parking enforcement in Astoria gotten worse?",
+      answer: [
+        "Illegal parking complaints in Queens are up 18% compared with the same 30 days six months ago.",
+        "Ticket records are a historical archive, so they can't tell you whether ticketing has picked up lately. A rise in complaints is not the same thing as a rise in tickets."
+      ],
+      checked: ["Parking and camera violations: Queens", "Complaint trend: illegal parking, Queens, 6 months"],
+      source: "NYC 311, NYC Dept. of Finance",
+      asOf: "Complaints: today. Tickets: archive, date unclear",
+      covers: "All of Queens",
+      warn: true
+    },
+    {
+      id: "restaurant",
+      q: "What's the best restaurant in Manhattan?",
+      answer: [
+        "I don't have restaurant data, so I can't answer that.",
+        "I can tell you about 311 complaints, complaint trends, parking tickets, building permits, and traffic speeds anywhere in the city."
+      ],
+      checked: [],
+      source: "None",
+      asOf: "Not applicable",
+      covers: "Outside what MyBlock knows",
+      warn: false
+    },
+    {
+      id: "statenisland",
+      q: "Is there a lot of traffic in Staten Island at 3am?",
+      answer: [
+        "The latest traffic readings for Staten Island are from 9:40 AM today, so they can't tell you about 3am.",
+        "Several sensors returned no reading at all. That means the data is missing, not that the roads are empty."
+      ],
+      checked: ["Traffic speeds: Staten Island, last 24 hours"],
+      source: "NYC DOT traffic sensors",
+      asOf: "Today, 9:40 AM",
+      covers: "Staten Island sensors only. Does not cover 3am.",
+      warn: true
+    }
+  ];
+
+  const samplesEl = document.getElementById("samples");
+  const answersEl = document.getElementById("answers");
+  const form = document.getElementById("ask");
+  const input = document.getElementById("question");
+
+  function el(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  SAMPLES.forEach(s => {
+    const li = el("li");
+    const b = el("button", "", s.q);
+    b.type = "button";
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => {
+      input.value = s.q;
+      show(s, b);
+    });
+    li.appendChild(b);
+    samplesEl.appendChild(li);
+  });
+
+  function markPressed(btn) {
+    samplesEl.querySelectorAll("button").forEach(x =>
+      x.setAttribute("aria-pressed", x === btn ? "true" : "false"));
+  }
+
+  function show(s, btn) {
+    markPressed(btn);
+    const n = el("article", "notice sheet paste");
+
+    n.appendChild(el("h2", "q", s.q));
+
+    const a = el("div", "answer");
+    s.answer.forEach(t => a.appendChild(el("p", "", t)));
+    n.appendChild(a);
+
+    const c = el("div", "checked");
+    c.appendChild(el("h3", "", "What MyBlock checked"));
+    if (s.checked.length) {
+      const ol = el("ol");
+      s.checked.forEach(t => ol.appendChild(el("li", "", t)));
+      c.appendChild(ol);
+    } else {
+      c.appendChild(el("p", "none", "Nothing. No source could help with this question."));
+    }
+    n.appendChild(c);
+
+    const strip = el("dl", "strip");
+    [["Source", s.source, false], ["Data as of", s.asOf, s.warn], ["Covers", s.covers, false]]
+      .forEach(([k, v, w]) => {
+        const d = el("div", w ? "warn" : "");
+        d.appendChild(el("dt", "", k));
+        d.appendChild(el("dd", "", v));
+        strip.appendChild(d);
+      });
+    n.appendChild(strip);
+
+    n.appendChild(el("p", "sample-flag", "Sample answer with made-up numbers. Not live data."));
+
+    answersEl.replaceChildren(n);
+  }
+
+  function showNotConnected(q) {
+    markPressed(null);
+    const n = el("article", "notice sheet paste");
+    n.appendChild(el("h2", "q", q));
+    const a = el("div", "answer");
+    a.appendChild(el("p", "", "Live answers aren't connected yet. Pick one of the sample questions to see how MyBlock answers."));
+    n.appendChild(a);
+    n.appendChild(el("p", "sample-flag", "Prototype. The agent runs from the command line for now."));
+    answersEl.replaceChildren(n);
+  }
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const q = input.value.trim();
+    if (!q) { input.focus(); return; }
+    const match = SAMPLES.find(s => s.q.toLowerCase() === q.toLowerCase());
+    if (match) {
+      const btn = [...samplesEl.querySelectorAll("button")].find(b => b.textContent === match.q);
+      show(match, btn);
+    } else {
+      showNotConnected(q);
+    }
+  });
+</script>
+</body>
+</html>
