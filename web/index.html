@@ -165,6 +165,8 @@
 
   .q { font-weight: 800; font-size: 26px; line-height: 1.1; margin: 0 0 14px; }
   .answer p { margin: 0 0 12px; max-width: 62ch; }
+  .answer ul { margin: 0 0 12px; padding-left: 22px; max-width: 62ch; }
+  .ask button:disabled { opacity: .6; cursor: wait; }
 
   .checked { margin: 16px 0 20px; font-size: 15px; }
   .checked h3 { font-size: 15px; font-weight: 800; margin: 0 0 4px; }
@@ -260,10 +262,10 @@
         <h2>Ask about your neighborhood</h2>
         <form class="ask" id="ask">
           <label for="question" class="visually-hidden">Your question</label>
-          <input id="question" type="text" placeholder="Noise, parking, construction, traffic" autocomplete="off">
+          <input id="question" type="text" placeholder="Noise, parking, construction, traffic" autocomplete="off" maxlength="300">
           <button type="submit">Ask</button>
         </form>
-        <p class="tryline">Live answers aren't connected yet. Try a sample:</p>
+        <p class="tryline">Live answers take up to a minute. Or see a sample answer:</p>
         <ul class="samples" id="samples"></ul>
       </section>
 
@@ -366,7 +368,8 @@
     n.appendChild(el("h2", "q", s.q));
 
     const a = el("div", "answer");
-    s.answer.forEach(t => a.appendChild(el("p", "", t)));
+    if (s.answerNode) a.appendChild(s.answerNode);
+    else s.answer.forEach(t => a.appendChild(el("p", "", t)));
     n.appendChild(a);
 
     const c = el("div", "checked");
@@ -390,20 +393,93 @@
       });
     n.appendChild(strip);
 
-    n.appendChild(el("p", "sample-flag", "Sample answer with made-up numbers. Not live data."));
+    n.appendChild(el("p", "sample-flag", s.flag || "Sample answer with made-up numbers. Not live data."));
 
     answersEl.replaceChildren(n);
   }
 
-  function showNotConnected(q) {
+  // Turn the model's plain text (which may contain light markdown) into
+  // safe DOM nodes. Everything goes through textContent, never innerHTML.
+  function renderAnswer(text) {
+    const frag = document.createDocumentFragment();
+    let list = null;
+    const clean = t => t.replace(/\*\*(.+?)\*\*/g, "$1").replace(/^#+\s*/, "").trim();
+    text.split(/\n/).forEach(raw => {
+      const line = raw.trim();
+      if (!line) { list = null; return; }
+      const bullet = /^[-*•]\s+(.*)$/.exec(line);
+      if (bullet) {
+        if (!list) { list = el("ul"); frag.appendChild(list); }
+        list.appendChild(el("li", "", clean(bullet[1])));
+      } else {
+        list = null;
+        frag.appendChild(el("p", "", clean(line)));
+      }
+    });
+    return frag;
+  }
+
+  const uniq = arr => [...new Set(arr.filter(Boolean))];
+
+  function showLive(q, data) {
+    const calls = data.calls || [];
+    show({
+      q,
+      answerNode: renderAnswer(data.answer || ""),
+      checked: calls.map(c => c.label),
+      source: calls.length ? uniq(calls.map(c => c.source)).join(", ") : "None",
+      asOf: calls.length ? uniq(calls.map(c => c.asOf)).join(". ") : "Not applicable",
+      covers: calls.length
+        ? uniq(calls.map(c => c.borough)).map(b => "All of " + b).join(", ") + " (borough-wide data)"
+        : "No city data checked",
+      warn: calls.some(c => c.stale),
+      flag: "Live answer from NYC Open Data, written by AI. It can be wrong, so check the source before relying on it."
+    }, null);
+  }
+
+  function showMessage(q, message, flag) {
     markPressed(null);
     const n = el("article", "notice sheet paste");
     n.appendChild(el("h2", "q", q));
     const a = el("div", "answer");
-    a.appendChild(el("p", "", "Live answers aren't connected yet. Pick one of the sample questions to see how MyBlock answers."));
+    a.appendChild(el("p", "", message));
     n.appendChild(a);
-    n.appendChild(el("p", "sample-flag", "Prototype. The agent runs from the command line for now."));
+    if (flag) n.appendChild(el("p", "sample-flag", flag));
     answersEl.replaceChildren(n);
+    return n;
+  }
+
+  const askBtn = form.querySelector("button");
+  let busy = false;
+
+  async function askLive(q) {
+    if (busy) return;
+    busy = true;
+    askBtn.disabled = true;
+    askBtn.textContent = "...";
+    answersEl.setAttribute("aria-busy", "true");
+    showMessage(q, "Checking the city's data. This can take up to a minute.");
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ question: q })
+      });
+      let data = {};
+      try { data = await res.json(); } catch {}
+      if (!res.ok) {
+        showMessage(q, data.error || "Something went wrong getting an answer. Try again.");
+      } else {
+        showLive(q, data);
+      }
+    } catch {
+      showMessage(q, "Couldn't reach MyBlock. Check your connection and try again.");
+    } finally {
+      busy = false;
+      askBtn.disabled = false;
+      askBtn.textContent = "Ask";
+      answersEl.removeAttribute("aria-busy");
+    }
   }
 
   form.addEventListener("submit", e => {
@@ -415,7 +491,7 @@
       const btn = [...samplesEl.querySelectorAll("button")].find(b => b.textContent === match.q);
       show(match, btn);
     } else {
-      showNotConnected(q);
+      askLive(q);
     }
   });
 </script>

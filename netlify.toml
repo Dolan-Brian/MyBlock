@@ -1,0 +1,9 @@
+# Netlify settings for MyBlock.
+# The page lives in web/, the agent backend lives in netlify/functions/.
+# Function code stays outside web/ so its source is never published.
+
+[build]
+  publish = "web"
+
+[functions]
+  directory = "netlify/functions"
